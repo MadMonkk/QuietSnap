@@ -32,6 +32,8 @@ public class CaptureService extends Service {
     private SurfaceTexture dummyTexture;
     private PowerManager.WakeLock wakeLock;
     private boolean finished = false;
+    private int previewFrameCount = 0;
+    private long lastPreviewLuma = -1;
 
     @Override public void onCreate() {
         super.onCreate();
@@ -80,6 +82,16 @@ public class CaptureService extends Service {
                 }
                 params.setPictureSize(best.width, best.height);
             }
+            // Use conservative automatic settings for older Qualcomm camera HALs.
+            if (params.getSupportedWhiteBalance() != null && params.getSupportedWhiteBalance().contains(Camera.Parameters.WHITE_BALANCE_AUTO)) {
+                params.setWhiteBalance(Camera.Parameters.WHITE_BALANCE_AUTO);
+            }
+            if (params.getSupportedSceneModes() != null && params.getSupportedSceneModes().contains(Camera.Parameters.SCENE_MODE_AUTO)) {
+                params.setSceneMode(Camera.Parameters.SCENE_MODE_AUTO);
+            }
+            if (params.getSupportedFlashModes() != null && params.getSupportedFlashModes().contains(Camera.Parameters.FLASH_MODE_OFF)) {
+                params.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+            }
             List<String> focusModes = params.getSupportedFocusModes();
             if (focusModes != null) {
                 if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
@@ -89,10 +101,27 @@ public class CaptureService extends Service {
             // Camera1 needs a preview target even when no visible preview is desired.
             dummyTexture = new SurfaceTexture(10);
             camera.setPreviewTexture(dummyTexture);
+            camera.setPreviewCallback((data, cam) -> {
+                if (data == null || data.length < 16) return;
+                previewFrameCount++;
+                // Sample Y plane (NV21) to detect whether preview frames are entirely black.
+                long sum = 0;
+                int samples = Math.min(200, data.length);
+                int step = Math.max(1, data.length / samples);
+                int count = 0;
+                for (int i = 0; i < data.length && count < samples; i += step) {
+                    sum += (data[i] & 0xff);
+                    count++;
+                }
+                lastPreviewLuma = count == 0 ? -1 : sum / count;
+            });
             camera.startPreview();
+            Log.i(TAG, "Camera1 preview started; waiting for frames before JPEG capture");
             handler.postDelayed(() -> {
                 if (camera == null || finished) return;
+                Log.i(TAG, "Preview diagnostic: frames=" + previewFrameCount + " sampledLuma=" + lastPreviewLuma);
                 try {
+                    camera.setPreviewCallback(null);
                     camera.takePicture(null, null, (data, cam) -> {
                         try { saveJpeg(data); }
                         catch (Exception e) { Log.e(TAG, "Failed saving JPEG", e); }
@@ -108,6 +137,7 @@ public class CaptureService extends Service {
 
     private void saveJpeg(byte[] bytes) throws Exception {
         if (bytes == null || bytes.length < 1000) throw new Exception("Camera returned empty/too-small JPEG");
+        Log.i(TAG, "JPEG callback received bytes=" + bytes.length + "; previewFrames=" + previewFrameCount + "; previewLuma=" + lastPreviewLuma);
         File dir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), "QuietSnap");
         if (!dir.exists() && !dir.mkdirs()) throw new Exception("Could not create DCIM/QuietSnap");
         String stamp = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.US).format(new Date());

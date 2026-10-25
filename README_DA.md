@@ -2,6 +2,8 @@
 
 Dette projekt bygger to APK-varianter via GitHub Actions, så du ikke behøver Android Studio på din egen computer.
 
+**Testversion 1.1-test1:** Denne version bruger Camera1 med automatisk hvidbalance/scenetilstand og logger preview-billedernes lysniveau, så vi kan diagnosticere problemet med sorte billeder. Det er en testversion, ikke en garanteret rettelse.
+
 ## APK-varianter
 - **QuietSnap Bagkamera**: bruger altid bagkameraet.
 - **QuietSnap Kameravalg**: giver mulighed for at vælge bagkamera eller frontkamera.
