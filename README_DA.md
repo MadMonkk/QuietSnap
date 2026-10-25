@@ -28,3 +28,6 @@ Begge varianter kan planlægge ét eller to billeder om dagen, gemmer JPEG-bille
 Dette projekt er ikke testet på en fysisk OnePlus 3T. Android/OxygenOS kan begrænse kameraadgang fra baggrundstjenester; derfor er der ingen garanti for, at fotografering i standby virker konsekvent før praktisk test. Appen viser en vedvarende notifikation under fotograferingen. Den er målrettet Android 9 (target SDK 28).
 
 GitHub Actions bygger debug-APK'er. De er beregnet til installation og test, ikke som signeret produktionsudgivelse.
+
+## Fejlretning: sorte billeder
+Denne udgave vælger en JPEG-størrelse, som kameraet faktisk understøtter, venter kort efter opstart og angiver automatisk eksponering, hvidbalance og fokus i stillbilledanmodningen. Det er en forbedring, ikke en garanti; test på den konkrete OnePlus 3T.
