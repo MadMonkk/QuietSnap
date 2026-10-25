@@ -31,3 +31,7 @@ GitHub Actions bygger debug-APK'er. De er beregnet til installation og test, ikk
 
 ## Fejlretning: sorte billeder
 Denne udgave vælger en JPEG-størrelse, som kameraet faktisk understøtter, venter kort efter opstart og angiver automatisk eksponering, hvidbalance og fokus i stillbilledanmodningen. Det er en forbedring, ikke en garanti; test på den konkrete OnePlus 3T.
+
+
+## Alternativ kameratest (Camera1)
+Denne testudgave bruger Androids ældre Camera1-API i stedet for Camera2 og starter en skjult preview-surface før billedet tages. Det kan hjælpe på enheder, hvor Camera2-implementeringen giver sorte billeder. Det er stadig en testudgave og ikke bekræftet på en fysisk OnePlus 3T. Hvis billedet fortsat er sort, bør vi indsamle en fejl-log fra telefonen frem for at gætte på flere ændringer.
